@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Torrents</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+        <style>
+            input {
+                text-size-adjust: 100%;
+                --swiper-theme-color: #007aff;
+                --swiper-navigation-size: 44px;
+                -webkit-font-smoothing: antialiased;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                box-sizing: border-box;
+                display: block;
+                font-family: inherit;
+                font-size: 110%;
+                font-weight: inherit;
+                margin: 0;
+                margin-bottom: 0 !important;
+                outline: none !important;
+                padding: 0.4em 0.25em;
+                width: 100%;
+                color: inherit;
+                background: #292929;
+                border: 0.16em solid #292929;
+                border-radius: 0.2em;
+                box-shadow: none;
+            }
+
+            input:focus {
+                border-color: #00a4dc;
+            }
+
+            label {
+                line-height: 1.35;
+                text-size-adjust: 100%;
+                text-rendering: optimizeLegibility;
+                font-family: Noto Sans, Noto Sans HK, Noto Sans JP, Noto Sans KR,
+                    Noto Sans SC, Noto Sans TC, sans-serif;
+                font-size: 93%;
+                --swiper-theme-color: #007aff;
+                --swiper-navigation-size: 44px;
+                -webkit-font-smoothing: antialiased;
+                display: inline-block;
+                margin-bottom: 0.25em;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            table {
+                margin-top: 30px;
+            }
+            table,
+            th,
+            td {
+                border: 1px solid rgba(255, 255, 255, 0.7);
+                border-collapse: collapse;
+            }
+            body,
+            html {
+                background-color: #101010;
+            }
+            .container {
+                line-height: 1.35;
+                text-size-adjust: 100%;
+                text-rendering: optimizeLegibility;
+                font-family: Noto Sans, Noto Sans HK, Noto Sans JP, Noto Sans KR,
+                    Noto Sans SC, Noto Sans TC, sans-serif;
+                font-size: 93%;
+                color: rgba(255, 255, 255, 0.8);
+                --swiper-theme-color: #007aff;
+                --swiper-navigation-size: 44px;
+                -webkit-font-smoothing: antialiased;
+                max-width: 54em;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <label>Search</label>
+            <div style="display: flex">
+                <input style="flex: 1" id="search_txt" />
+                <button
+                    id="search"
+                    style="
+                        border: none;
+                        background-color: black;
+                        color: rgba(255, 255, 255, 0.7);
+                        cursor: pointer;
+                    "
+                >
+                    Search
+                </button>
+            </div>
+
+            <table style="width: 100%; text-align: left; border: 1 solid white">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th style="width: 30px">S/L</th>
+                        <th style="width: 100px">Size</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="loli"></tbody>
+            </table>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io();
+            let id_to_magnet = {};
+
+            $('#search').on('click', function (val) {
+                console.log($('#search').val());
+                socket.emit('search', $('#search_txt').val());
+                $('#search').text('Loading...');
+                $('#search').prop('disabled', true);
+                return false;
+            });
+            // display message
+            socket.on('searchResult', function (msg) {
+                $('#search').text('Search');
+                $('#search').prop('disabled', false);
+                id_to_magnet = {};
+                let tableBody = '';
+                msg.forEach((element) => {
+                    id_to_magnet[element.id] = element.magnet;
+                    element.peers = element.peers ? element.peers : 0;
+                    tableBody += `<tr><td>${element.title}</td><td>${element.seeds}/${element.peers}</td><td>${element.size}</td><td style="cursor: pointer" class="download" role="${element.magnet}">Magnet</td></tr>`;
+                });
+
+                $('#loli').html(tableBody);
+                $('.download').click(function () {
+                    copyTextToClipboard($(this).prop('role'));
+
+                window.alert('Copied to clipboard');
+                });
+            });
+
+
+            function fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement('textarea');
+                textArea.value = text;
+
+                // Avoid scrolling to bottom
+                textArea.style.top = '0';
+                textArea.style.left = '0';
+                textArea.style.position = 'fixed';
+
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    var successful = document.execCommand('copy');
+                    var msg = successful ? 'successful' : 'unsuccessful';
+                    console.log('Fallback: Copying text command was ' + msg);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+
+                document.body.removeChild(textArea);
+            }
+            function copyTextToClipboard(text) {
+                if (!navigator.clipboard) {
+                    fallbackCopyTextToClipboard(text);
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(
+                    function () {
+                        console.log(
+                            'Async: Copying to clipboard was successful!'
+                        );
+                    },
+                    function (err) {
+                        console.error('Async: Could not copy text: ', err);
+                    }
+                );
+            }
+        </script>
+    </body>
+</html>
