@@ -1,3 +1,9 @@
+# General
+
+Small repo to host a simple server providing an interface to the [Torrent search api](https://www.npmjs.com/package/torrent-search-api) for easily adding torrents to [Flood](https://github.com/jesec/flood) 
+
+**!Note:** run locally, no auth added.
+
 # 1) Install dependencies
 
 
